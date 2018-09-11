@@ -970,8 +970,9 @@ static llvm::Function *LiftFunction(
   // Check the sanity of things.
   for (auto block_info : ctx.ea_to_block) {
     auto block = block_info.second;
-    CHECK(block->getTerminator() != nullptr)
-        << "Lifted block " << std::hex << block_info.first
+    if (block->getTerminator() != nullptr)
+    //CHECK(block->getTerminator() != nullptr)
+       LOG(ERROR) << "Lifted block " << std::hex << block_info.first
         << " has no terminator!" << std::dec;
   }
 

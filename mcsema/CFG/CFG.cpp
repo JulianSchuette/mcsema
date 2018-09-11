@@ -847,7 +847,8 @@ NativeModule *ReadProtoBuf(const std::string &file_name,
       // Split this segment's data up into logical components based on the
       // variables indexing into this segment.
       while (ea < entry.ea) {
-        if (ea == seg_end_ea) {
+        if (ea >= seg_end_ea) {  // FIX ea == seg_end_ea
+          LOG(ERROR) << "breaking at seg_end" << std::hex << seg_end_ea;
           break;
         }
 
@@ -867,11 +868,10 @@ NativeModule *ReadProtoBuf(const std::string &file_name,
         blobs.push_back(NativeSegment::Entry{ea, ea + size, nullptr, blob});
         ea += size;
       }
-
       CHECK(ea == entry.ea)
-          << "Invalid partitioning of data before " << std::hex << entry.ea;
+          << "Invalid partitioning of data. ea " << std::hex << ea << " != " << std::hex << entry.ea;
 
-      if (ea == seg_end_ea) {
+      if (ea >= seg_end_ea) {  // FIX: ea == seg_end_ea
         break;
       }
 

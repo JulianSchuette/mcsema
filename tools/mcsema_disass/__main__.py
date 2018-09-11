@@ -52,6 +52,37 @@ def _find_binary_ninja(path_to_binaryninja):
   except:
     return False
 
+# Make sure we can do an `import r2pipe`.
+def _find_r2pipe(path_to_r2pipe):
+  try:
+    import r2pipe
+    return True
+  except:
+    pass
+
+  if not os.path.isfile(path_to_r2pipe):
+    return False
+
+  if not os.access(path_to_r2pipe, os.X_OK):
+    return False
+
+  r2pipe_dir = os.path.dirname(path_to_r2pipe)
+  sys.path.append(r2pipe_dir)
+  sys.path.append(os.path.join(r2pipe_dir, "python"))
+
+  try:
+    import r2pipe
+    return True
+  except:
+    return False
+
+def str2bool(v):
+    if v.lower() in ('yes', 'true', 't', 'y', '1'):
+        return True
+    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
+        return False
+    else:
+        raise argparse.ArgumentTypeError('Boolean value expected.')
 
 def main():
   arg_parser = argparse.ArgumentParser(
@@ -98,6 +129,20 @@ def main():
       '--entrypoint',
       help="The entrypoint where disassembly should begin",
       required=True)
+
+  arg_parser.add_argument(
+      '--debug',
+      help="Switch on debug output",
+      type=str2bool, nargs='?',
+      const=True, default=False,
+      required=False)
+  
+  arg_parser.add_argument(
+      "--std-defs",
+      action='append',
+      type=str,
+      default=[],
+      help="std_defs file: definitions and calling conventions of imported functions and data")
 
   args, command_args = arg_parser.parse_known_args()
 
@@ -169,6 +214,11 @@ def main():
         arg_parser.error("Could not `import binaryninja`. Is it in your PYTHONPATH?")
       from binja.cfg import get_cfg
       ret = get_cfg(args, fixed_command_args)
+    elif 'r2' in args.disassembler or 'radare2' in args.disassembler:
+      if not _find_r2pipe(args.disassembler):
+        arg_parser.error("Could not `import r2pipe`. Is it in your PYTHONPATH?")
+      from radare2 import get_cfg
+      ret = get_cfg.main(args, fixed_command_args)
     else:
       arg_parser.error("{} passed to --disassembler is not known.".format(
           args.disassembler))
